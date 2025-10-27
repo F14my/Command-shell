@@ -4,35 +4,34 @@ import shutil
 from os import listdir
 from datetime import datetime
 
-try:
+import platform
+from typing import Protocol
+
+UNIX = True if platform.system() == "Darwin" else False
+if UNIX:
     import pwd
     import grp
 
-    UNIX = True
-except ImportError:
-    UNIX = False
+class CommandHandler(Protocol):
+    def execute(self, args: list[str], shell: "Bash") -> None | str: ...
 
 
 class Bash:
     def __init__(self) -> None:
         self.current_directory = os.getcwd()
-        self.complex_commands = {
+        self.complex_commands: dict[str, CommandHandler] = {
+            "pwd": PwdHandler(),
             "ls": LsHandler(),
-        }
-        self.simple_commands = {
-            "pwd": self.handle_pwd,
-            "cd": self.handle_cd,
-            "cat": self.handle_cat,
-            "cp": self.handle_cp,
-            "mv": self.handle_mv,
-            "rm": self.handle_rm,
+            "cd": CdHandler(),
+            "rm": RmHandler(),
+            "cat": CatHandler(),
+            "cp": CpHandler(),
+            "mv": MvHandler(),
         }
 
     def execute(self, command_line: str) -> None | str:
         command, args = self.parse_command(command_line)
-        if command in self.simple_commands:
-            return self.simple_commands[command](args)
-        elif command in self.complex_commands:
+        if command in self.complex_commands:
             return self.complex_commands[command].execute(args, self)
         else:
             return f"Command not found: {command}"
@@ -40,6 +39,59 @@ class Bash:
     def parse_command(self, command_line: str) -> tuple[str, list[str]]:
         parts = shlex.split(command_line)
         return parts[0], parts[1::]
+
+
+class MvHandler:
+    def execute(self, args: list[str], shell) -> None:
+        self.handle_mv(args)
+
+    def handle_mv(self, args: list[str]) -> None:
+        if len(args) < 2:
+            raise ValueError("mv: Missing file operand")
+        source, target = args[0], args[1]
+        try:
+            shutil.move(source, target)
+        except FileNotFoundError:
+            print(f"mv: Cannot stat '{source}': No such file or directory")
+        except PermissionError:
+            print(f"mv: Cannot move '{source}': Permission denied")
+
+
+
+class CpHandler:
+    def execute(self, args: list[str], shell) -> None:
+        keys = [arg for arg in args if arg.startswith("-")]
+        files = [arg for arg in args if not arg.startswith("-")]
+        self.handle_cp(keys, files)
+
+    def handle_cp(self, keys: list[str], files: list[str]) -> None:
+        if len(files) < 2:
+            raise ValueError("cp: Missing file operand")
+        source, target = files[0], files[1]
+        try:
+            if "-r" in keys or os.path.isdir(source):
+                shutil.copytree(source, target)
+            else:
+                shutil.copy(source, target)
+        except PermissionError:
+            raise PermissionError(f"cp: Permission denied: '{source}'")
+        except FileNotFoundError:
+            print(f"cp: Cannot stat '{source}': No such file or directory")
+        except shutil.SameFileError:
+            print(f"cp: '{source}' and '{target}' are the same file")
+
+
+class PwdHandler:
+    def execute(self, args: list[str], shell) -> None:
+        self.handle_pwd(args)
+
+    def handle_pwd(self, args: list[str]) -> None:
+        print(f"Current working directory: {os.getcwd().replace("\\", "/")}")
+
+
+class CdHandler:
+    def execute(self, args: list[str], shell) -> None:
+        self.handle_cd(args)
 
     def handle_cd(self, args: list[str]) -> None:
         if not args:
@@ -53,8 +105,10 @@ class Bash:
         except FileNotFoundError:
             raise FileNotFoundError(f"cd: cannot find '{path}': No such directory")
 
-    def handle_pwd(self, args: list[str]) -> None:
-        print(f"Current working directory: {os.getcwd().replace("\\", "/")}")
+
+class CatHandler:
+    def execute(self, args: list[str], shell) -> None:
+        self.handle_cat(args)
 
     def handle_cat(self, args: list[str]) -> None:
         path = "".join([arg for arg in args if not arg.startswith("-")])
@@ -68,38 +122,14 @@ class Bash:
         else:
             raise ValueError(f"cat: Cannot open '{path}': Cannot open directory")
 
-    def handle_cp(self, args: list[str]) -> None:
-        keys = [arg for arg in args if arg.startswith("-")]
-        files = [arg for arg in args if not arg.startswith("-")]
-        if len(files) < 2:
-            raise ValueError("cp: Missing file operand")
-        source, target = files[0], files[1]
-        try:
-            if "-r" in keys or os.path.isdir(source):
-                shutil.copytree(source, target)
-            else:
-                shutil.copy(source, target)
-        except PermissionError:
-            raise (f"cp: Permission denied: '{source}'")
-        except FileNotFoundError:
-            print(f"cp: Cannot stat '{source}': No such file or directory")
-        except shutil.SameFileError:
-            print(f"cp: '{source}' and '{target}' are the same file")
 
-    def handle_mv(self, args: list[str]) -> None:
-        if len(args) < 2:
-            raise ValueError("mv: Missing file operand")
-        source, target = args[0], args[1]
-        try:
-            shutil.move(source, target)
-        except FileNotFoundError:
-            print(f"mv: Cannot stat '{source}': No such file or directory")
-        except PermissionError:
-            print(f"mv: Cannot move '{source}': Permission denied")
-
-    def handle_rm(self, args: list[str]) -> None:
+class RmHandler:
+    def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
         file = [arg for arg in args if not arg.startswith("-")][0]
+        self.handle_rm(keys, file)
+
+    def handle_rm(self, keys: list[str], file: str) -> None:
         try:
             if "-r" in keys or os.path.isdir(file):
                 response = input(f"rm: remove write-protected directory '{file}'? ")
@@ -108,9 +138,11 @@ class Bash:
             else:
                 os.remove(file)
         except PermissionError:
-            raise (f"rm: Permission denied: '{file}'")
+            raise PermissionError(f"rm: Permission denied: '{file}'")
         except FileNotFoundError:
             print(f"rm: Cannot delete '{file}': No such file or directory")
+        except Exception as error:
+            raise error
 
 
 class LsHandler:
@@ -139,11 +171,11 @@ class LsHandler:
     def get_owner_group(self, uid: int, gid: int) -> tuple[str, str]:
         if UNIX:
             try:
-                owner = pwd.getpwuid(uid).pw_name
+                owner = pwd.getpwuid(uid).pw_name # type: ignore[attr-defined]
             except KeyError:
                 owner = str(uid)
             try:
-                group = grp.getgrgid(gid).gr_name
+                group = grp.getgrgid(gid).gr_name # type: ignore[attr-defined]
             except KeyError:
                 group = str(gid)
         else:
