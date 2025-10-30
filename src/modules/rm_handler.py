@@ -1,7 +1,9 @@
 import shutil
 import os
+from src.modules.logger import log_command
 
 class RmHandler:
+    @log_command
     def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
         file = [arg for arg in args if not arg.startswith("-")][0]

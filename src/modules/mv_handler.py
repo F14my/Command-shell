@@ -1,6 +1,8 @@
 import shutil
+from src.modules.logger import log_command
 
 class MvHandler:
+    @log_command
     def execute(self, args: list[str], shell) -> None:
         self.handle_mv(args)
 

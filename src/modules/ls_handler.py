@@ -2,6 +2,7 @@ import os
 import platform
 from datetime import datetime
 from os import listdir
+from src.modules.logger import log_command
 
 UNIX = True if platform.system() == "Darwin" else False
 
@@ -10,6 +11,7 @@ if UNIX:
     import grp
 
 class LsHandler:
+    @log_command
     def execute(self, args: list, shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
         args = [arg for arg in args if not arg.startswith("-")]

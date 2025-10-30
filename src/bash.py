@@ -1,13 +1,13 @@
 import os
 import shlex
 
-from src.handlers.pwd_handler import PwdHandler
-from src.handlers.ls_handler import LsHandler
-from src.handlers.mv_handler import MvHandler
-from src.handlers.rm_handler import RmHandler
-from src.handlers.cat_handler import CatHandler
-from src.handlers.cp_handler import CpHandler
-from src.handlers.cd_handler import CdHandler
+from src.modules.pwd_handler import PwdHandler
+from src.modules.ls_handler import LsHandler
+from src.modules.mv_handler import MvHandler
+from src.modules.rm_handler import RmHandler
+from src.modules.cat_handler import CatHandler
+from src.modules.cp_handler import CpHandler
+from src.modules.cd_handler import CdHandler
 
 import platform
 from typing import Protocol

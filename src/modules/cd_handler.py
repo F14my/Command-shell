@@ -1,6 +1,8 @@
 import os
+from src.modules.logger import log_command
 
 class CdHandler:
+    @log_command
     def execute(self, args: list[str], shell) -> None:
         self.handle_cd(args)
 

@@ -1,7 +1,9 @@
 import shutil
 import os
+from src.modules.logger import log_command
 
 class CpHandler:
+    @log_command
     def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
         files = [arg for arg in args if not arg.startswith("-")]
