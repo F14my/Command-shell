@@ -21,6 +21,6 @@ class CpHandler:
         except PermissionError:
             raise PermissionError(f"cp: Permission denied: '{source}'")
         except FileNotFoundError:
-            print(f"cp: Cannot stat '{source}': No such file or directory")
+            raise FileNotFoundError(f"cp: Cannot stat '{source}': No such file or directory")
         except shutil.SameFileError:
-            print(f"cp: '{source}' and '{target}' are the same file")
+            raise ValueError(f"cp: '{source}' and '{target}' are the same file")

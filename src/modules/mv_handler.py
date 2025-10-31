@@ -13,6 +13,6 @@ class MvHandler:
         try:
             shutil.move(source, target)
         except FileNotFoundError:
-            print(f"mv: Cannot stat '{source}': No such file or directory")
+            raise FileNotFoundError(f"mv: Cannot stat '{source}': No such file or directory")
         except PermissionError:
-            print(f"mv: Cannot move '{source}': Permission denied")
+            raise PermissionError(f"mv: Cannot move '{source}': Permission denied")

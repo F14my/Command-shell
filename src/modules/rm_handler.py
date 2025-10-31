@@ -20,6 +20,6 @@ class RmHandler:
         except PermissionError:
             raise PermissionError(f"rm: Permission denied: '{file}'")
         except FileNotFoundError:
-            print(f"rm: Cannot delete '{file}': No such file or directory")
+            raise FileNotFoundError(f"rm: Cannot delete '{file}': No such file or directory")
         except Exception as error:
             raise error

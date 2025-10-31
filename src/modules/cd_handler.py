@@ -10,7 +10,7 @@ class CdHandler:
         if not args:
             path = os.path.expanduser("~")
         else:
-            path = "".join(args).replace("/", "\\")
+            path = "".join(args)
             if path.startswith("~"):
                 path = os.path.expanduser("~") + path[1::]
         try:
