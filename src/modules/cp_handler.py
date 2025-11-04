@@ -8,11 +8,13 @@ class CpHandler:
     def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
         files = [arg for arg in args if not arg.startswith("-")]
+        if len(files) > 2:
+            raise ValueError("cp: Too many arguments")
+        if len(files) < 2:
+            raise ValueError("cp: Missing file operand")
         self.handle_cp(keys, files)
 
     def handle_cp(self, keys: list[str], files: list[str]) -> None:
-        if len(files) < 2:
-            raise ValueError("cp: Missing file operand")
         source, target = files[0], files[1]
         try:
             target_dir = os.path.dirname(target)

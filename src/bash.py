@@ -11,6 +11,7 @@ from src.modules.logger import logger
 
 from src.history.history import HistoryManager
 from src.history.history_handler import HistoryHandler
+from src.modules.grep_handler import GrepHandler
 
 from src.undo.undo import UndoHandler
 
@@ -34,6 +35,7 @@ class Bash:
             "cat": CatHandler(),
             "cp": CpHandler(),
             "mv": MvHandler(),
+            "grep": GrepHandler(),
             "history": HistoryHandler(),
             "undo": UndoHandler(),
         }
