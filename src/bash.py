@@ -1,4 +1,3 @@
-import os
 import shlex
 
 from src.modules.pwd_handler import PwdHandler
@@ -13,10 +12,13 @@ from src.modules.logger import logger
 from src.history.history import HistoryManager
 from src.history.history_handler import HistoryHandler
 
+from src.undo.undo import UndoHandler
+
 import platform
 from typing import Protocol
 
 UNIX = True if platform.system() == "Darwin" else False
+
 
 class CommandHandler(Protocol):
     def execute(self, args: list[str], shell: "Bash") -> str | None | ValueError: ...
@@ -24,8 +26,6 @@ class CommandHandler(Protocol):
 
 class Bash:
     def __init__(self) -> None:
-        self.current_directory = os.getcwd()
-        self.history: list[str] = []
         self.complex_commands: dict[str, CommandHandler] = {
             "pwd": PwdHandler(),
             "ls": LsHandler(),
@@ -35,6 +35,7 @@ class Bash:
             "cp": CpHandler(),
             "mv": MvHandler(),
             "history": HistoryHandler(),
+            "undo": UndoHandler(),
         }
 
     def execute(self, command_line: str) -> ValueError | None:
@@ -44,8 +45,10 @@ class Bash:
 
         logger.info(command_line)
         if command in self.complex_commands:
-            history_manager.add(command_line)
-            return self.complex_commands[command].execute(args, self)
+            result = self.complex_commands[command].execute(args, self)
+            if isinstance(result, str) or not result:
+                history_manager.add(command, args)
+            return result
         else:
             logger.error(f"Command not found: {command}")
             return ValueError(f"Command not found: {command}")

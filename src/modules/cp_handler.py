@@ -2,6 +2,7 @@ import shutil
 import os
 from src.modules.logger import log_command
 
+
 class CpHandler:
     @log_command
     def execute(self, args: list[str], shell) -> None:
@@ -14,9 +15,14 @@ class CpHandler:
             raise ValueError("cp: Missing file operand")
         source, target = files[0], files[1]
         try:
-            if "-r" in keys or os.path.isdir(source):
+            target_dir = os.path.dirname(target)
+            if target_dir:
+                os.makedirs(target_dir, exist_ok=True)
+            if "-r" in keys:
                 shutil.copytree(source, target)
             else:
+                if os.path.isdir(source):
+                    raise ValueError("cp: use -r to copy directory")
                 shutil.copy(source, target)
         except PermissionError:
             raise PermissionError(f"cp: Permission denied: '{source}'")

@@ -1,5 +1,6 @@
 from src.bash import Bash
 
+
 def main() -> None:
     bash = Bash()
     while True:

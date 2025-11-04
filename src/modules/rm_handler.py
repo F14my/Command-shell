@@ -1,6 +1,8 @@
 import shutil
 import os
 from src.modules.logger import log_command
+from src.constants import TRASH
+
 
 class RmHandler:
     @log_command
@@ -14,9 +16,9 @@ class RmHandler:
             if "-r" in keys or os.path.isdir(file):
                 response = input(f"rm: remove write-protected directory '{file}'? ")
                 if response.lower() in ['y', 'yes']:
-                    shutil.rmtree(file)
+                    shutil.move(file, TRASH)
             else:
-                os.remove(file)
+                shutil.move(file, TRASH)
         except PermissionError:
             raise PermissionError(f"rm: Permission denied: '{file}'")
         except FileNotFoundError:

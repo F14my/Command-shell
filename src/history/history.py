@@ -1,16 +1,40 @@
+from src.constants import HISTORY_FILE
 from pathlib import Path
+import json
+import time
+
 
 class HistoryManager:
-    def __init__(self, max_size: int = 1000):
-        self.history_file = Path.cwd()  / ".history"
-        self.max_size = max_size
+    def __init__(self):
+        try:
+            file = open(HISTORY_FILE, "r")
+        except FileNotFoundError:
+            with open(HISTORY_FILE, "w", encoding="utf-8") as write:
+                data = {
+                    "stack": [],
+                    "last_id": 0
+                }
+                json.dump(data, write, indent=4)
 
-    def add(self, command: str):
-        if "history" not in command:
-            with open(self.history_file, "a", encoding="utf-8") as write_file:
-                write_file.write(command + "\n")
-
-    def get_last(self, n: int = 10) -> list[str]:
-        with open(self.history_file, "r") as read_file:
-            output = [line.strip() for line in read_file.readlines()][:n]
-        return output
+    def add(self, command: str, args: list[str]):
+        if command in ["undo", "history"]:
+            return
+        src = dst = None
+        if command in ["cp", "mv"]:
+            src = str(Path.cwd() / args[0])
+            dst = str(Path.cwd() / args[1].split("/")[0])
+        if command == "rm":
+            src = str(Path.cwd() / args[0])
+        with open(HISTORY_FILE, "r", encoding="utf-8") as read:
+            data = json.load(read)
+            stack = {
+                "id": data["last_id"] + 1,
+                "command": command,
+                "src": src,
+                "dst": dst,
+                "timestamp": time.time(),
+            }
+            data["stack"].append(stack)
+            data["last_id"] += 1
+        with open(HISTORY_FILE, "w", encoding="utf-8") as write:
+            json.dump(data, write, indent=4)
