@@ -7,11 +7,15 @@ from src.modules.rm_handler import RmHandler
 from src.modules.cat_handler import CatHandler
 from src.modules.cp_handler import CpHandler
 from src.modules.cd_handler import CdHandler
+from src.modules.make_archive_handler import ZipHandler
+from src.modules.make_archive_handler import TarHandler
+from src.modules.unpack_archive_handler import UnzipHandler
+from src.modules.unpack_archive_handler import UntarHandler
 from src.modules.logger import logger
+from src.modules.grep_handler import GrepHandler
 
 from src.history.history import HistoryManager
 from src.history.history_handler import HistoryHandler
-from src.modules.grep_handler import GrepHandler
 
 from src.undo.undo import UndoHandler
 
@@ -35,6 +39,10 @@ class Bash:
             "cat": CatHandler(),
             "cp": CpHandler(),
             "mv": MvHandler(),
+            "zip": ZipHandler(),
+            "unzip": UnzipHandler(),
+            "tar": TarHandler(),
+            "untar": UntarHandler(),
             "grep": GrepHandler(),
             "history": HistoryHandler(),
             "undo": UndoHandler(),
