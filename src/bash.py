@@ -61,7 +61,7 @@ class Bash:
             return result
         else:
             logger.error(f"Command not found: {command}")
-            return ValueError(f"Command not found: {command}")
+            raise ValueError(f"Command not found: {command}")
 
     def parse_command(self, command_line: str) -> tuple[str, list[str]]:
         parts = shlex.split(command_line)

@@ -12,6 +12,14 @@ class RmHandler:
         self.handle_rm(keys, file)
 
     def handle_rm(self, keys: list[str], file: str) -> None:
+        abs_path = os.path.abspath(file)
+        root_dir = os.path.abspath(os.sep)
+        current_dir = os.getcwd()
+        parent_dir = os.path.dirname(current_dir)
+
+        if abs_path == root_dir or abs_path == parent_dir:
+            raise PermissionError(f"rm: You cannot remove '{file}'!")
+
         try:
             if "-r" in keys or os.path.isdir(file):
                 response = input(f"rm: remove write-protected directory '{file}'? ")
