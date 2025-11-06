@@ -18,13 +18,13 @@ class CpHandler:
         source, target = files[0], files[1]
         try:
             target_dir = os.path.dirname(target)
+            if os.path.isdir(source) and "-r" not in keys:
+                raise ValueError("cp: use -r to copy directory")
             if target_dir:
                 os.makedirs(target_dir, exist_ok=True)
             if "-r" in keys:
                 shutil.copytree(source, target)
             else:
-                if os.path.isdir(source):
-                    raise ValueError("cp: use -r to copy directory")
                 shutil.copy(source, target)
         except PermissionError:
             raise PermissionError(f"cp: Permission denied: '{source}'")
