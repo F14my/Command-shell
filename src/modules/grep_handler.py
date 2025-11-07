@@ -5,6 +5,10 @@ from src.modules.logger import log_command
 
 
 class GrepHandler:
+    """Implementation of 'grep' command.
+
+    Works like Unix 'grep' to search text in files.
+    """
     @log_command
     def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
@@ -15,6 +19,7 @@ class GrepHandler:
         self.handle_grep(keys, pattern, path)
 
     def get_all_files(self, path):
+        """Get all files in directory (non-recursive)."""
         files = []
         for item in os.listdir(path):
             full_path = os.path.join(path, item)
@@ -23,6 +28,7 @@ class GrepHandler:
         return files
 
     def get_all_files_recursive(self, path):
+        """Get all files in directory and subdirectories."""
         files = []
         for curr_dir, dirs, filenames in os.walk(path):
             for filename in filenames:
@@ -31,6 +37,7 @@ class GrepHandler:
         return files
 
     def handle_grep(self, keys: list[str], pattern: str, path: list[str]) -> None:
+        """Search for pattern in specified files."""
         try:
             pattern = re.compile(pattern)
         except re.error:

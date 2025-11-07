@@ -30,6 +30,13 @@ class CommandHandler(Protocol):
 
 
 class Bash:
+    """
+    Simple command shell that supports basic commands.
+
+    Attributes:
+        complex_commands (dict[str, CommandHandler]): Mapping of command names to handlers.
+    """
+
     def __init__(self) -> None:
         self.complex_commands: dict[str, CommandHandler] = {
             "pwd": PwdHandler(),
@@ -49,6 +56,20 @@ class Bash:
         }
 
     def execute(self, command_line: str) -> ValueError | None:
+        """Parse and execute a user command.
+
+        Splits command into name and arguments, finds the right handler,
+        and saves to history if execution succeeds.
+
+        Args:
+            command_line (str): The command entered by user.
+
+        Returns:
+            ValueError | None: None if command worked, ValueError if command not found.
+
+        Raises:
+            ValueError: When no handler exists for the command.
+        """
         history_manager = HistoryManager()
 
         command, args = self.parse_command(command_line)
@@ -64,5 +85,14 @@ class Bash:
             raise ValueError(f"Command not found: {command}")
 
     def parse_command(self, command_line: str) -> tuple[str, list[str]]:
+        """
+        Split command line into command name and arguments.
+
+        Args:
+            command_line (str): Raw command input to parse.
+
+        Returns:
+            tuple[str, list[str]]: Command name and list of arguments.
+        """
         parts = shlex.split(command_line)
         return parts[0], parts[1::]

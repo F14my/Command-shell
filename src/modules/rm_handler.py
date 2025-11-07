@@ -5,13 +5,19 @@ from src.constants import TRASH
 
 
 class RmHandler:
+    """Implementation of 'rm' command.
+
+    Works like Unix 'rm' to remove files or directories.
+    """
     @log_command
     def execute(self, args: list[str], shell) -> None:
+        """Run rm command with given arguments."""
         keys = [arg for arg in args if arg.startswith("-")]
         files = [arg for arg in args if not arg.startswith("-")]
         self.handle_rm(keys, files)
 
     def handle_rm(self, keys: list[str], files: list[str]) -> None:
+        """Remove files or directories safely to .trash."""
         for file in files:
             abs_path = os.path.abspath(file)
             root_dir = os.path.abspath(os.sep)

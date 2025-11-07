@@ -10,6 +10,7 @@ from src.modules.logger import log_command
 
 
 def remove_empty_folders(path):
+    """Recursively remove empty folders starting from given path."""
     if not os.path.isdir(path):
         return
 
@@ -23,8 +24,14 @@ def remove_empty_folders(path):
 
 
 class UndoHandler:
+    """Implementation of 'undo' command to reverse file operations.
+
+    Supports undoing copy (cp), move (mv), and remove (rm) commands
+    by tracking command history and reversing the file operations.
+    """
     @log_command
     def execute(self, args: list[str], shell) -> None:
+        """Run undo command with specified target."""
         if len(args) > 1:
             raise ValueError("undo: Too many arguments")
         command = args[0] if args else ""
@@ -33,6 +40,7 @@ class UndoHandler:
         self.find_command(command)
 
     def find_command(self, command: str) -> None:
+        """Find the target command in history and execute undo operation."""
         command_handler = {
             "cp": self.handle_undo_cp,
             "mv": self.handle_undo_mv,
@@ -51,6 +59,11 @@ class UndoHandler:
             raise ValueError("undo: Nothing to undo or command not found")
 
     def handle_undo_cp(self, args: list[str], cwd: str) -> None:
+        """Undo copy operation by removing copied files.
+
+        For regular files: delete the copied file
+        For directories with -r: remove the entire directory tree
+        """
         key = [arg for arg in args if arg.startswith("-")]
         args = [arg for arg in args if not arg.startswith("-")]
         if "-r" in key:
@@ -63,12 +76,14 @@ class UndoHandler:
         remove_empty_folders(parent_dir)
 
     def handle_undo_mv(self, args: list[str], cwd: str) -> None:
+        """Undo move operation by moving file back to original location."""
         source = os.path.join(cwd, args[1])
         source = os.path.join(source, args[0])
         target = cwd
         shutil.move(source, target)
 
     def handle_undo_rm(self, args: list[str], cwd: str) -> None:
+        """Undo remove operation by restoring files from trash."""
         for i in range(len(args)):
             source = os.path.join(TRASH, args[i].split("/")[-1])
             target = os.path.join(cwd, args[i])

@@ -4,11 +4,13 @@ from src.modules.logger import log_command
 
 
 class ZipHandler:
+    """Implementation of 'zip' command to create zip archives."""
     def __init__(self):
         self.format = "zip"
 
     @log_command
     def execute(self, args: list[str], shell) -> None:
+        """Run zip command with given arguments."""
         path = os.path.join(os.getcwd(), args[0])
         if len(args) == 1:
             name = args[0]
@@ -20,10 +22,12 @@ class ZipHandler:
         self.handle_zip(path, name)
 
     def handle_zip(self, path: str, name: str) -> None:
+        """Create zip archive from specified folder."""
         shutil.make_archive(name, self.format, path)
 
 
 class TarHandler(ZipHandler):
+    """Implementation of 'tar' command to create tar archives."""
     def __init__(self):
         super().__init__()
         self.format = "tar"

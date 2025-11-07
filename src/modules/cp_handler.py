@@ -4,8 +4,13 @@ from src.modules.logger import log_command
 
 
 class CpHandler:
+    """Implementation of 'cp' command.
+
+    Works like Unix 'cp' to copy files and directories.
+    """
     @log_command
     def execute(self, args: list[str], shell) -> None:
+        """Run cp command with given arguments."""
         keys = [arg for arg in args if arg.startswith("-")]
         files = [arg for arg in args if not arg.startswith("-")]
         if len(files) > 2:
@@ -15,6 +20,7 @@ class CpHandler:
         self.handle_cp(keys, files)
 
     def handle_cp(self, keys: list[str], files: list[str]) -> None:
+        """Copy files or directories from source to target."""
         source, target = files[0], files[1]
         try:
             target_dir = os.path.dirname(target)

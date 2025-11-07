@@ -16,6 +16,11 @@ logger = logging.getLogger('Bash')
 
 
 def log_command(func):
+    """Decorator to log command execution and results.
+
+    Logs both successful commands and errors to the bash.log file.
+    Automatically extracts command name from class name and formats the log.
+    """
     def wrapper(self, args, shell):
         command_name = self.__class__.__name__.replace('Handler', '').lower()
         full_command = f"{command_name} {' '.join(args)}"

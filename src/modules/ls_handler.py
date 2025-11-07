@@ -11,13 +11,19 @@ if UNIX:
     import grp
 
 class LsHandler:
+    """Implementation of 'ls' command with '-l' option.
+
+    Works like Unix 'ls' to list directory contents.
+    """
     @log_command
     def execute(self, args: list, shell) -> None:
+        """Run ls command with given arguments."""
         keys = [arg for arg in args if arg.startswith("-")]
         args = [arg for arg in args if not arg.startswith("-")]
         self.handle_ls(keys, args, shell)
 
     def get_file_type(self, path: str) -> str:
+        """Get file type character (d for directory, l for link, etc.)."""
         if os.path.isdir(path):
             return 'd'
         elif os.path.islink(path):
@@ -28,6 +34,7 @@ class LsHandler:
             return '?'
 
     def get_permissions(self, code: str) -> str:
+        """Convert permission code to string like 'rwxr-xr--'."""
         perm_str = ""
         perm_list = ["---", "--x", "-w-", "-wx", "r--", "r-x", "rw-", "rwx"]
         for perm in code:
@@ -35,13 +42,14 @@ class LsHandler:
         return perm_str
 
     def get_owner_group(self, uid: int, gid: int) -> tuple[str, str]:
+        """Get owner and group names from user and group IDs."""
         if UNIX:
             try:
-                owner = pwd.getpwuid(uid).pw_name # type: ignore[attr-defined]
+                owner = pwd.getpwuid(uid).pw_name
             except KeyError:
                 owner = str(uid)
             try:
-                group = grp.getgrgid(gid).gr_name # type: ignore[attr-defined]
+                group = grp.getgrgid(gid).gr_name
             except KeyError:
                 group = str(gid)
         else:
@@ -50,6 +58,7 @@ class LsHandler:
         return owner, group
 
     def format_output(self, filepath: str) -> str:
+        """Format file info for detailed listing."""
         stat = os.stat(filepath)
         filename = os.path.basename(filepath)
         code = oct(stat.st_mode)[-3:]
@@ -68,6 +77,7 @@ class LsHandler:
         return f"{perms} {links:>2} {owner:>8} {group:>8} {size:>8} {formatted_time} {filename}"
 
     def handle_ls(self, keys: list[str], args: list[str], shell) -> None:
+        """List directory contents in simple or detailed format."""
         path = "".join(args).replace("/", "\\") if args else os.getcwd()
         try:
             lst_dir = listdir(path)
