@@ -9,19 +9,6 @@ from src.constants import UNDO_COMMANDS
 from src.modules.logger import log_command
 
 
-def remove_empty_folders(path):
-    """Recursively remove empty folders starting from given path."""
-    if not os.path.isdir(path):
-        return
-
-    for item in os.listdir(path):
-        item_path = os.path.join(path, item)
-        if os.path.isdir(item_path):
-            remove_empty_folders(item_path)
-
-    if not os.listdir(path):
-        os.rmdir(path)
-
 
 class UndoHandler:
     """Implementation of 'undo' command to reverse file operations.
@@ -52,9 +39,10 @@ class UndoHandler:
                 if (cmd["command"] == command) or (
                         command == "" and cmd["command"] in ["cp", "rm", "mv"]):
                     data["stack"].pop(len(data["stack"]) - command_id - 1)
-                    command_handler[cmd["command"]](cmd["args"], cmd["cwd"])
+                    args, cwd = cmd["args"], cmd["cwd"]
                     with open(HISTORY_FILE, "w") as write:
                         json.dump(data, write, indent=4)
+                    command_handler[cmd["command"]](args, cwd)
                     return
             raise ValueError("undo: Nothing to undo or command not found")
 
@@ -72,8 +60,6 @@ class UndoHandler:
         else:
             path = os.path.join(cwd, args[-1])
             os.remove(path)
-        parent_dir = os.path.dirname(path)
-        remove_empty_folders(parent_dir)
 
     def handle_undo_mv(self, args: list[str], cwd: str) -> None:
         """Undo move operation by moving file back to original location."""

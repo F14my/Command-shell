@@ -9,6 +9,7 @@ class GrepHandler:
 
     Works like Unix 'grep' to search text in files.
     """
+
     @log_command
     def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
@@ -57,4 +58,4 @@ class GrepHandler:
                 with open(file, "r", encoding="utf-8") as read:
                     for line_n, line in enumerate(read):
                         if pattern.search(line):
-                            print(f"{file} : {line_n} : {line.strip()}")
+                            print(f"{file}: {line_n + 1}: {line.strip()}")

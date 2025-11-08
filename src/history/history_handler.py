@@ -23,12 +23,12 @@ class HistoryHandler:
         self.handle_history(n)
 
     def handle_history(self, n: int) -> None:
-        """Print the first *n* commands from history.
+        """Print the last n commands from history.
 
         Args:
-            n (int): Number of commands to show from the start of history.
+            n (int): Number of commands to show from the end of history.
         """
         with open(HISTORY_FILE, "r", encoding="utf-8") as read:
             data = json.load(read)
-            for cmd_id, command in enumerate(data["stack"][:n]):
+            for cmd_id, command in enumerate(data["stack"][n:]):
                 print(cmd_id + 1, command["command"])

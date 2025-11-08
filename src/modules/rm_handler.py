@@ -18,6 +18,7 @@ class RmHandler:
 
     def handle_rm(self, keys: list[str], files: list[str]) -> None:
         """Remove files or directories safely to .trash."""
+        os.makedirs(TRASH, exist_ok=True)
         for file in files:
             abs_path = os.path.abspath(file)
             root_dir = os.path.abspath(os.sep)
@@ -31,6 +32,8 @@ class RmHandler:
                 if "-r" in keys or os.path.isdir(file):
                     response = input(f"rm: remove write-protected directory '{file}'? ")
                     if response.lower() in ['y', 'yes']:
+                        os.chmod(file, 0o777)
+                        os.chmod(TRASH, 0o777)
                         shutil.move(file, TRASH)
                 else:
                     shutil.move(file, TRASH)
