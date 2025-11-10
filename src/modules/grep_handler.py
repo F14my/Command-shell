@@ -14,9 +14,12 @@ class GrepHandler:
     def execute(self, args: list[str], shell) -> None:
         keys = [arg for arg in args if arg.startswith("-")]
         args = [arg for arg in args if not arg.startswith("-")]
-        if len(args) < 2:
+        if len(args) < 1:
             raise ValueError("grep: Too few arguments. Usage: grep <pattern> <path>")
-        pattern, path = args[0], args[1::]
+        if len(args) == 2:
+            pattern, path = args[0], args[1::]
+        else:
+            pattern, path = args[0], [os.getcwd()]
         self.handle_grep(keys, pattern, path)
 
     def get_all_files(self, path):

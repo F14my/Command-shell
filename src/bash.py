@@ -20,13 +20,8 @@ from src.history.history_handler import HistoryHandler
 from src.undo.undo import UndoHandler
 
 import platform
-from typing import Protocol
 
 UNIX = True if platform.system() == "Darwin" else False
-
-
-class CommandHandler(Protocol):
-    def execute(self, args: list[str], shell: "Bash") -> str | None | ValueError: ...
 
 
 class Bash:
@@ -34,11 +29,11 @@ class Bash:
     Simple command shell that supports basic commands.
 
     Attributes:
-        complex_commands (dict[str, CommandHandler]): Mapping of command names to handlers.
+        complex_commands (dict): Mapping of command names to handlers.
     """
 
     def __init__(self) -> None:
-        self.complex_commands: dict[str, CommandHandler] = {
+        self.complex_commands: dict = {
             "pwd": PwdHandler(),
             "ls": LsHandler(),
             "cd": CdHandler(),
