@@ -48,13 +48,11 @@ class UndoHandler:
             raise ValueError("undo: Nothing to undo or command not found")
 
     def handle_undo_cp(self, args: list[str], cwd: str) -> None:
-        """Undo copy operation by removing copied files.
-
-        For regular files: delete the copied file
-        For directories with -r: remove the entire directory tree
-        """
         keys = [arg for arg in args if arg.startswith("-")]
         files = [arg for arg in args if not arg.startswith("-")]
+
+        if len(files) < 2:
+            raise ValueError("undo: cp: not enough arguments")
 
         src = files[0]
         dst = files[1]
@@ -62,8 +60,12 @@ class UndoHandler:
         src_path = os.path.abspath(os.path.join(cwd, src))
         dst_path = os.path.abspath(os.path.join(cwd, dst))
 
-        if os.path.isdir(dst_path):
-            target = os.path.join(dst_path, os.path.basename(src_path))
+        src_name = os.path.basename(src_path)
+
+        possible = os.path.join(dst_path, src_name)
+
+        if os.path.exists(possible):
+            target = possible
         else:
             target = dst_path
 
@@ -94,7 +96,6 @@ class UndoHandler:
 
             best_name = None
             best_ts = -1
-
 
             for name in os.listdir(TRASH):
                 parts = name.split("_", 2)
