@@ -1,17 +1,38 @@
 import unittest
 import os
 import tempfile
-from src.bash import Bash
 import io
+import json
+import shutil
+
 from contextlib import redirect_stdout
+
+from src.bash import Bash
+from src.constants import TRASH, HISTORY_FILE
 
 
 class TestBash(unittest.TestCase):
     def setUp(self):
         """Set up test environment before each test."""
-        self.bash = Bash()
+        self.old_cwd = os.getcwd()
+
         self.test_dir = tempfile.mkdtemp()
         os.chdir(self.test_dir)
+
+        if os.path.exists(HISTORY_FILE):
+            os.remove(HISTORY_FILE)
+
+        if os.path.isdir(TRASH):
+            shutil.rmtree(TRASH)
+        elif os.path.exists(TRASH):
+            os.remove(TRASH)
+
+        self.bash = Bash()
+
+    def tearDown(self):
+        """Clean up after each test."""
+        os.chdir(self.old_cwd)
+        shutil.rmtree(self.test_dir, ignore_errors=True)
 
     def capture_output(self, command):
         """Capture print output from command execution."""
@@ -86,14 +107,91 @@ class TestBash(unittest.TestCase):
         self.bash.execute("rm to_delete.txt")
         self.assertFalse(os.path.exists("to_delete.txt"))
 
-    def test_grep_command(self):
-        """Test command grep."""
-        with open("search.txt", "w") as f:
-            f.write("MAI THE BEST")
+    def test_rm_moves_file_to_trash(self):
+        """Test rm moves file to trash"""
+        os.makedirs(TRASH, exist_ok=True)
 
-        output = self.capture_output("grep MAI search.txt")
-        self.assertIn(f"MAI THE BEST", output)
-        self.assertNotIn(f"MAI NOT THE BEST", output)
+        with open("trash_me.txt", "w") as f:
+            f.write("hello")
+
+        self.bash.execute("rm trash_me.txt")
+
+        self.assertFalse(os.path.exists("trash_me.txt"))
+
+        trash_files = os.listdir(TRASH)
+        self.assertEqual(len(trash_files), 1)
+        self.assertIn("trash_me.txt", trash_files[0])
+
+    def test_undo_cp_file_to_file(self):
+        """undo cp should delete the copy file, but leave the original intact"""
+        with open("src.txt", "w") as f:
+            f.write("data")
+
+        self.bash.execute("cp src.txt dst.txt")
+        self.assertTrue(os.path.exists("dst.txt"))
+
+        self.bash.execute("undo cp")
+
+        self.assertTrue(os.path.exists("src.txt"))
+        self.assertFalse(os.path.exists("dst.txt"))
+
+    def test_undo_cp_file_to_dir(self):
+        """undo cp, when copying to a directory, deletes the file inside it"""
+        with open("src2.txt", "w") as f:
+            f.write("data2")
+
+        os.makedirs("dst_dir")
+        self.bash.execute("cp src2.txt dst_dir")
+
+        self.assertTrue(os.path.exists(os.path.join("dst_dir", "src2.txt")))
+
+        self.bash.execute("undo cp")
+
+        self.assertTrue(os.path.exists("src2.txt"))
+        self.assertFalse(os.path.exists(os.path.join("dst_dir", "src2.txt")))
+
+    def test_undo_mv_restores_file_to_original_place(self):
+        """undo mv should return the file to the original directory"""
+        with open("move_me.txt", "w") as f:
+            f.write("x")
+
+        os.makedirs("target_dir")
+        self.bash.execute("mv move_me.txt target_dir")
+
+        self.assertFalse(os.path.exists("move_me.txt"))
+        self.assertTrue(os.path.exists(os.path.join("target_dir", "move_me.txt")))
+
+        self.bash.execute("undo mv")
+
+        self.assertTrue(os.path.exists("move_me.txt"))
+        self.assertFalse(os.path.exists(os.path.join("target_dir", "move_me.txt")))
+
+    def test_undo_removes_command_from_history(self):
+        """After undo, the corresponding command should disappear from history"""
+        with open("hist.txt", "w") as f:
+            f.write("1")
+        self.bash.execute("cp hist.txt hist_copy.txt")
+
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            before = json.load(f)["stack"]
+        self.assertTrue(any(cmd["command"] == "cp" for cmd in before))
+
+        self.bash.execute("undo cp")
+
+        with open(HISTORY_FILE, "r", encoding="utf-8") as f:
+            after = json.load(f)["stack"]
+
+        self.assertEqual(len(after), len(before) - 1)
+        self.assertFalse(any(cmd["command"] == "cp" for cmd in after))
+
+    def test_grep_recursive_flag(self):
+        """Check grep -r against subdirectories."""
+        os.makedirs("gdir/sub", exist_ok=True)
+        with open("gdir/sub/file.txt", "w") as f:
+            f.write("MAI THE BEST\nNOT THIS")
+
+        output = self.capture_output("grep -r MAI gdir")
+        self.assertIn("MAI THE BEST", output)
 
     def test_unknown_command(self):
         """Test unknown command."""

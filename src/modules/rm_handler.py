@@ -1,7 +1,17 @@
 import shutil
 import os
+import hashlib
+import time
+
 from src.modules.logger import log_command
 from src.constants import TRASH
+
+
+def make_trash_name(abs_path: str) -> str:
+    ts = int(time.time() * 1000)
+    h = hashlib.sha256(abs_path.encode("utf-8")).hexdigest()[:6]
+    base = os.path.basename(abs_path) or "item"
+    return f"{ts}_{h}_{base}"
 
 
 class RmHandler:
@@ -9,6 +19,7 @@ class RmHandler:
 
     Works like Unix 'rm' to remove files or directories.
     """
+
     @log_command
     def execute(self, args: list[str], shell) -> None:
         """Run rm command with given arguments."""
@@ -19,6 +30,7 @@ class RmHandler:
     def handle_rm(self, keys: list[str], files: list[str]) -> None:
         """Remove files or directories safely to .trash."""
         os.makedirs(TRASH, exist_ok=True)
+
         for file in files:
             abs_path = os.path.abspath(file)
             root_dir = os.path.abspath(os.sep)
@@ -28,15 +40,18 @@ class RmHandler:
             if abs_path == root_dir or abs_path == parent_dir:
                 raise PermissionError(f"rm: You cannot remove '{file}'!")
 
+            trash_name = make_trash_name(abs_path)
+            trash_target = os.path.join(TRASH, trash_name)
+
             try:
-                if "-r" in keys or os.path.isdir(file):
+                if "-r" in keys or os.path.isdir(abs_path):
                     response = input(f"rm: remove write-protected directory '{file}'? ")
-                    if response.lower() in ['y', 'yes']:
-                        os.chmod(file, 0o777)
+                    if response.lower() in ["y", "yes"]:
+                        os.chmod(abs_path, 0o777)
                         os.chmod(TRASH, 0o777)
-                        shutil.move(file, TRASH)
+                        shutil.move(abs_path, trash_target)
                 else:
-                    shutil.move(file, TRASH)
+                    shutil.move(abs_path, trash_target)
             except PermissionError:
                 raise PermissionError(f"rm: Permission denied: '{file}'")
             except FileNotFoundError:

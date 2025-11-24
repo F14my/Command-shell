@@ -30,5 +30,8 @@ class HistoryHandler:
         """
         with open(HISTORY_FILE, "r", encoding="utf-8") as read:
             data = json.load(read)
-            for cmd_id, command in enumerate(data["stack"][n:]):
-                print(cmd_id + 1, command["command"])
+            stack = data["stack"]
+            last_cmds = stack[-n:]
+
+            for idx, command in enumerate(last_cmds, start=1):
+                print(idx, command["command"])

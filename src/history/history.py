@@ -1,5 +1,4 @@
 from src.constants import HISTORY_FILE
-from pathlib import Path
 import json
 import os
 
@@ -13,7 +12,7 @@ class HistoryManager:
     """
     def __init__(self):
         try:
-            file = open(HISTORY_FILE, "r")
+            open(HISTORY_FILE, "r")
         except FileNotFoundError:
             with open(HISTORY_FILE, "w", encoding="utf-8") as write:
                 data = {

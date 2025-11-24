@@ -1,6 +1,7 @@
 import json
 import shutil
 import os
+import hashlib
 
 from src.constants import HISTORY_FILE
 from src.constants import TRASH
@@ -9,13 +10,13 @@ from src.constants import UNDO_COMMANDS
 from src.modules.logger import log_command
 
 
-
 class UndoHandler:
     """Implementation of 'undo' command to reverse file operations.
 
     Supports undoing copy (cp), move (mv), and remove (rm) commands
     by tracking command history and reversing the file operations.
     """
+
     @log_command
     def execute(self, args: list[str], shell) -> None:
         """Run undo command with specified target."""
@@ -52,14 +53,24 @@ class UndoHandler:
         For regular files: delete the copied file
         For directories with -r: remove the entire directory tree
         """
-        key = [arg for arg in args if arg.startswith("-")]
-        args = [arg for arg in args if not arg.startswith("-")]
-        if "-r" in key:
-            path = os.path.join(cwd, args[-1])
-            shutil.rmtree(path)
+        keys = [arg for arg in args if arg.startswith("-")]
+        files = [arg for arg in args if not arg.startswith("-")]
+
+        src = files[0]
+        dst = files[1]
+
+        src_path = os.path.abspath(os.path.join(cwd, src))
+        dst_path = os.path.abspath(os.path.join(cwd, dst))
+
+        if os.path.isdir(dst_path):
+            target = os.path.join(dst_path, os.path.basename(src_path))
         else:
-            path = os.path.join(cwd, args[-1])
-            os.remove(path)
+            target = dst_path
+
+        if "-r" in keys:
+            shutil.rmtree(target)
+        else:
+            os.remove(target)
 
     def handle_undo_mv(self, args: list[str], cwd: str) -> None:
         """Undo move operation by moving file back to original location."""
@@ -70,7 +81,41 @@ class UndoHandler:
 
     def handle_undo_rm(self, args: list[str], cwd: str) -> None:
         """Undo remove operation by restoring files from trash."""
-        for i in range(len(args)):
-            source = os.path.join(TRASH, args[i].split("/")[-1])
-            target = os.path.join(cwd, args[i])
-            shutil.move(source, target)
+        files = [arg for arg in args if not arg.startswith("-")]
+
+        for arg in files:
+            if os.path.isabs(arg):
+                abs_path = arg
+            else:
+                abs_path = os.path.abspath(os.path.join(cwd, arg))
+
+            base = os.path.basename(abs_path) or "item"
+            h_need = hashlib.sha256(abs_path.encode("utf-8")).hexdigest()[:6]
+
+            best_name = None
+            best_ts = -1
+
+
+            for name in os.listdir(TRASH):
+                parts = name.split("_", 2)
+                if len(parts) != 3:
+                    continue
+                ts_str, h_str, base_name = parts
+                if h_str != h_need or base_name != base:
+                    continue
+                try:
+                    ts = int(ts_str)
+                except ValueError:
+                    continue
+                if ts > best_ts:
+                    best_ts = ts
+                    best_name = name
+
+            if best_name is None:
+                raise FileNotFoundError(f"undo: Cannot restore '{arg}': not found in trash")
+
+            source = os.path.join(TRASH, best_name)
+            target_dir = os.path.dirname(abs_path)
+            os.makedirs(target_dir, exist_ok=True)
+
+            shutil.move(source, abs_path)
